@@ -68,16 +68,25 @@
     const hasSerif = fontFamily.toLowerCase().includes('serif');
     const hasMaterialSymbols = fontFamily.toLowerCase().includes('material symbols sharp');
     const hasFontAwesome = fontFamily.toLowerCase().includes('fontawesome');
+    const hasMonospace = fontFamily.toLowerCase().includes('monospace');
 
 
     let isMixedFamily = false;
-    if (hasSansSerif && !hasInter && !hasMaterialSymbols && !hasFontAwesome) { // If sans-serif is present but Inter or icon fonts are not the primary, it might be mixed.
+    // Если sans-serif присутствует, но Inter или иконные шрифты не являются основными, это может быть смешанным.
+    // Исключаем monospace, так как это может быть преднамеренно для кода.
+    if (hasSansSerif && !hasInter && !hasMaterialSymbols && !hasFontAwesome && !hasMonospace) {
         isMixedFamily = true;
     }
-    if (hasSerif && !hasInter && !hasMaterialSymbols && !hasFontAwesome) { // If serif is present and Inter or icon fonts are not primary.
+    // Если serif присутствует, а Inter или иконные шрифты не являются основными.
+    if (hasSerif && !hasInter && !hasMaterialSymbols && !hasFontAwesome && !hasMonospace) {
         isMixedFamily = true;
     }
-    if (fontFamily.includes("serif") && fontFamily.includes("sans")) { // Old check
+    // Старая проверка: если в одном fontFamily есть и "serif", и "sans".
+    if (fontFamily.includes("serif") && fontFamily.includes("sans")) {
+        isMixedFamily = true;
+    }
+     // Проверяем, если Inter присутствует, но не является первым в списке, и при этом первый шрифт не является иконным
+    if (hasInter && primaryFont !== 'inter' && !hasMaterialSymbols && !hasFontAwesome) {
         isMixedFamily = true;
     }
 
@@ -85,13 +94,18 @@
       issues.push({ type: "⚠️ Смешанные семейства", detail: key, example: fullCssPath });
     }
 
-    if (parseFloat(lineHeight) < parseFloat(fontSize) * 1.2) {
+    if (parseFloat(lineHeight) === 0) {
+        issues.push({ type: "💥 line-height: 0px", detail: key, example: fullCssPath });
+    } else if (parseFloat(lineHeight) < parseFloat(fontSize) * 1.2) {
       issues.push({ type: "📏 Маленький line-height", detail: key, example: fullCssPath });
+    }
+    if (parseFloat(fontSize) === 0) {
+        issues.push({ type: "💥 font-size: 0px", detail: key, example: fullCssPath });
     }
     if (fontWeight === "100" || fontWeight === "900") {
       issues.push({ type: "💡 Экстремальный font-weight", detail: key, example: fullCssPath });
     }
-    // Only report unique style if it's not an icon font, as icon fonts might legitimately be unique.
+    // Только сообщать об уникальном стиле, если это не иконный шрифт, так как иконные шрифты могут быть по праву уникальными.
     if (elements.length === 1 && !hasMaterialSymbols && !hasFontAwesome) {
       issues.push({ type: "🔍 Уникальный стиль (только у 1 элемента)", detail: key, example: fullCssPath });
     }
@@ -107,4 +121,23 @@
   );
 
   console.log("✅ Проверка завершена. Если таблица пустая — критичных проблем не найдено.");
+
+  // Собираем информацию о загруженных CSS файлах
+  const loadedStylesheets = [];
+
+  // Извлекаем <link> теги
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+    loadedStylesheets.push({ type: 'Link (external stylesheet)', source: link.href });
+  });
+
+  // Извлекаем <style> теги
+  document.querySelectorAll('style').forEach((style, index) => {
+    // Для <style> тегов можно показать часть содержимого или указать, что это внутренние стили
+    const contentPreview = style.innerHTML.substring(0, 100).trim();
+    loadedStylesheets.push({ type: `Style tag (inline/embedded)`, source: `(Content preview: ${contentPreview}...)` });
+  });
+
+  console.log("\n--- Загруженные CSS-источники ---");
+  console.table(loadedStylesheets);
+
 })();
