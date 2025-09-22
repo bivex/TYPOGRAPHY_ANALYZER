@@ -1437,6 +1437,7 @@
             this.renderIssues(issuesContainer, 'all');
 
             document.body.appendChild(container);
+            console.log('Accessibility interface added to DOM');
         },
 
         createHeader() {
@@ -1589,6 +1590,7 @@
             ];
 
             filters.forEach((filter, index) => {
+                console.log('Creating tab:', filter.name, filter.label);
                 const tab = document.createElement('button');
                 tab.style.cssText = `
       flex: 1;
@@ -1617,21 +1619,27 @@
                     tab.style.background = `linear-gradient(180deg, transparent 0%, ${filter.color}15 100%)`;
                 }
 
-                tab.addEventListener('click', () => {
+                tab.addEventListener('click', (event) => {
+                    console.log('Tab clicked:', filter.name);
                     if (filter.name === 'export') {
+                        console.log('Showing export tab');
                         this.showExportTab();
                     } else {
+                        console.log('Filtering issues:', filter.name);
                         this.filterAccessibilityIssues(filter.name, tab);
                     }
                 });
                 filterTabs.appendChild(tab);
             });
 
+            console.log('All tabs created, total:', filterTabs.children.length);
             return filterTabs;
         },
 
         // Новый метод для отображения вкладки экспорта
         showExportTab() {
+            console.log('showExportTab called');
+            
             // Обновляем активную вкладку
             document.querySelectorAll('[data-filter]').forEach(tab => {
                 tab.style.color = '#ccc';
@@ -1640,25 +1648,58 @@
             });
 
             const exportTab = document.querySelector('[data-filter="export"]');
-            const color = exportTab.dataset.color;
-            exportTab.style.color = '#fff';
-            exportTab.style.borderBottomColor = color;
-            exportTab.style.background = `linear-gradient(180deg, transparent 0%, ${color}15 100%)`;
+            console.log('Export tab found:', exportTab);
+            
+            if (exportTab) {
+                const color = exportTab.dataset.color;
+                exportTab.style.color = '#fff';
+                exportTab.style.borderBottomColor = color;
+                exportTab.style.background = `linear-gradient(180deg, transparent 0%, ${color}15 100%)`;
+            }
 
             // Отображаем панель экспорта
             const container = document.getElementById('a11y-issues-container');
-            this.renderExportPanel(container);
+            console.log('Container found:', container);
+            
+            if (container) {
+                // Увеличиваем высоту контейнера для панели экспорта
+                container.style.maxHeight = '85vh';
+                container.style.height = 'auto';
+                container.style.minHeight = '600px';
+                
+                // Также увеличиваем высоту основного контейнера
+                const mainContainer = document.getElementById('accessibility-analyzer-results');
+                if (mainContainer) {
+                    mainContainer.style.maxHeight = '95vh';
+                    mainContainer.style.minHeight = '700px';
+                }
+                
+                this.renderExportPanel(container);
+            } else {
+                console.error('Container a11y-issues-container not found');
+                // Попробуем найти контейнер по другому селектору
+                const altContainer = document.querySelector('#accessibility-analyzer-results .a11y-issues-container') || 
+                                   document.querySelector('#accessibility-analyzer-results > div:nth-child(4)');
+                console.log('Alternative container found:', altContainer);
+                if (altContainer) {
+                    altContainer.style.maxHeight = '80vh';
+                    altContainer.style.height = 'auto';
+                    this.renderExportPanel(altContainer);
+                }
+            }
         },
         // Создание панели экспорта
         renderExportPanel(container) {
+            console.log('renderExportPanel called with container:', container);
             container.innerHTML = '';
 
             const exportPanel = document.createElement('div');
             exportPanel.style.cssText = `
-    padding: 20px;
+    padding: 30px;
     background: linear-gradient(135deg, #2a2a3e 0%, #3a3a4e 100%);
     border-radius: 12px;
-    margin: 10px;
+    margin: 15px;
+    min-height: 500px;
   `;
 
             const stats = this.getExportStats();
@@ -1672,12 +1713,12 @@
     </div>
 
     <!-- Быстрый экспорт -->
-    <div style="margin-bottom: 24px;">
-      <h4 style="color: #fff; margin: 0 0 12px 0; font-size: 14px; display: flex; align-items: center;">
-        <span style="margin-right: 8px;">⚡</span>
+    <div style="margin-bottom: 32px;">
+      <h4 style="color: #fff; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center;">
+        <span style="margin-right: 10px;">⚡</span>
         Быстрый экспорт
       </h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
         ${this.createExportButton('copy-all-quick', '📋 Все проблемы', `${stats.total} проблем`, '#00cc66', 'Полный список всех найденных проблем')}
         ${this.createExportButton('copy-critical-quick', '🚨 Только критические', `${stats.critical} проблем`, '#ff4757', 'Проблемы требующие немедленного исправления')}
         ${this.createExportButton('copy-automated-quick', '🤖 Автоматизируемые', `${stats.automated} проблем`, '#764ba2', 'Проблемы которые можно исправить автоматически')}
@@ -1685,12 +1726,12 @@
     </div>
 
     <!-- Экспорт по категориям -->
-    <div style="margin-bottom: 24px;">
-      <h4 style="color: #fff; margin: 0 0 12px 0; font-size: 14px; display: flex; align-items: center;">
-        <span style="margin-right: 8px;">🎯</span>
+    <div style="margin-bottom: 32px;">
+      <h4 style="color: #fff; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center;">
+        <span style="margin-right: 10px;">🎯</span>
         По категориям доступности
       </h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
         ${this.createExportButton('copy-visual', '👁️ Визуальные', `${stats.visual} проблем`, '#5f27cd', 'Контраст, цвета, видимость')}
         ${this.createExportButton('copy-keyboard', '⌨️ Клавиатура', `${stats.keyboard} проблем`, '#00d2ff', 'Навигация, фокус, табуляция')}
         ${this.createExportButton('copy-semantic', '🏷️ Семантика', `${stats.semantic} проблем`, '#10ac84', 'ARIA, роли, структура')}
@@ -1700,12 +1741,12 @@
     </div>
 
     <!-- Специальные отчеты -->
-    <div style="margin-bottom: 24px;">
-      <h4 style="color: #fff; margin: 0 0 12px 0; font-size: 14px; display: flex; align-items: center;">
-        <span style="margin-right: 8px;">📊</span>
+    <div style="margin-bottom: 32px;">
+      <h4 style="color: #fff; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center;">
+        <span style="margin-right: 10px;">📊</span>
         Специальные отчеты
       </h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
         ${this.createExportButton('copy-wcag-report', '🏆 WCAG Compliance', 'Полный отчет', '#e67e22', 'Детальный отчет о соответствии WCAG 2.1')}
         ${this.createExportButton('copy-developer-guide', '👨‍💻 Гид разработчика', 'С примерами кода', '#9b59b6', 'Руководство по исправлению с кодом')}
         ${this.createExportButton('copy-testing-plan', '🧪 План тестирования', 'Чек-лист', '#3498db', 'Пошаговый план тестирования доступности')}
@@ -1714,12 +1755,12 @@
     </div>
 
     <!-- Форматы экспорта -->
-    <div style="margin-bottom: 20px;">
-      <h4 style="color: #fff; margin: 0 0 12px 0; font-size: 14px; display: flex; align-items: center;">
-        <span style="margin-right: 8px;">🔧</span>
+    <div style="margin-bottom: 32px;">
+      <h4 style="color: #fff; margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center;">
+        <span style="margin-right: 10px;">🔧</span>
         Готовые решения
       </h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
         ${this.createExportButton('copy-css-fixes', '🎨 CSS исправления', 'Готовый код', '#2ecc71', 'CSS правила для исправления проблем')}
         ${this.createExportButton('copy-html-improvements', '📝 HTML улучшения', 'Разметка', '#f39c12', 'Примеры правильной HTML разметки')}
         ${this.createExportButton('copy-js-enhancements', '⚡ JS улучшения', 'Скрипты', '#9b59b6', 'JavaScript для динамических улучшений')}
@@ -1728,8 +1769,8 @@
     </div>
 
     <!-- Статистика -->
-    <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; border-left: 4px solid #764ba2;">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; font-size: 12px;">
+    <div style="background: rgba(255,255,255,0.05); padding: 24px; border-radius: 10px; border-left: 4px solid #764ba2;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; font-size: 13px;">
         <div style="text-align: center;">
           <div style="font-size: 20px; font-weight: bold; color: #ff4757;">${stats.critical}</div>
           <div style="color: #ccc;">Критических</div>
@@ -1758,6 +1799,14 @@
             this.setupExportEventListeners(exportPanel);
 
             container.appendChild(exportPanel);
+            console.log('Export panel added to container');
+            
+            // Принудительно обновляем отображение
+            container.style.display = 'block';
+            exportPanel.style.display = 'block';
+            
+            // Прокручиваем к началу контейнера
+            container.scrollTop = 0;
         },
         // Создание кнопки экспорта
         createExportButton(id, title, subtitle, color, description) {
@@ -1768,19 +1817,23 @@
               background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%);
               border: 2px solid ${color}40;
               color: #fff;
-              padding: 16px;
-              border-radius: 8px;
+              padding: 20px;
+              border-radius: 10px;
               cursor: pointer;
               font-family: inherit;
-              font-size: 11px;
+              font-size: 12px;
               transition: all 0.3s ease;
               text-align: left;
               position: relative;
               overflow: hidden;
+              min-height: 80px;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
             ">
-      <div style="font-weight: bold; margin-bottom: 4px; color: ${color};">${title}</div>
-      <div style="color: #ccc; font-size: 10px;">${subtitle}</div>
-      <div style="position: absolute; top: 8px; right: 8px; font-size: 16px; opacity: 0.7;">📤</div>
+      <div style="font-weight: bold; margin-bottom: 6px; color: ${color}; font-size: 13px;">${title}</div>
+      <div style="color: #ccc; font-size: 11px;">${subtitle}</div>
+      <div style="position: absolute; top: 12px; right: 12px; font-size: 18px; opacity: 0.7;">📤</div>
     </button>
   `;
         },
@@ -2650,6 +2703,13 @@
 
             // Re-render issues
             const container = document.getElementById('a11y-issues-container');
+            
+            // Восстанавливаем стандартную высоту контейнера для обычных вкладок
+            if (filterType !== 'export') {
+                container.style.maxHeight = '450px';
+                container.style.height = 'auto';
+            }
+            
             this.renderIssues(container, filterType);
         },
 
@@ -3469,20 +3529,26 @@
                 this.consolidateIssues();
 
                 setTimeout(() => {
+                    const wcagScore = this.calculateWCAGScore();
+                    
                     if (this.state.fixableIssues.length === 0) {
                         console.log('✅ Accessibility Analysis Complete: No issues found!');
-                        this.showAccessibilityNotification('🎉 Превосходно! Серьезных проблем с доступностью не найдено.', 'success');
+                        
+                        if (wcagScore === 0) {
+                            this.showAccessibilityNotification('⚠️ WCAG Compliance: 0% - Используйте вкладки экспорта для анализа', 'warning');
+                        } else {
+                            this.showAccessibilityNotification('🎉 Превосходно! Серьезных проблем с доступностью не найдено.', 'success');
+                        }
 
-                        // Show minimal success interface
+                        // Show success interface (will show full interface if WCAG score is low)
                         this.createSuccessInterface();
                         return;
                     }
 
-                    // Create full analysis interface
+                    // Create full analysis interface (including when WCAG score is 0%)
                     this.createAccessibilityInterface();
 
                     const criticalCount = this.state.fixableIssues.filter(i => i.severity === 'critical').length;
-                    const wcagScore = this.calculateWCAGScore();
 
                     console.log(`♿ Accessibility Analysis complete. Found ${this.state.fixableIssues.length} issues to address.`);
                     console.log(`📊 WCAG Compliance Score: ${wcagScore}%`);
@@ -3559,31 +3625,75 @@
 
         // Create success interface for when no issues found
         createSuccessInterface() {
+            const wcagScore = this.calculateWCAGScore();
+            const isLowScore = wcagScore < 50;
+            
             const container = document.createElement('div');
             container.id = 'accessibility-success-results';
             container.style.cssText = `
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 400px;
-        background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
-        border-radius: 20px;
+        top: 10px;
+        right: 10px;
+        width: ${isLowScore ? '650px' : '400px'};
+        max-height: 80vh;
+        background: linear-gradient(135deg, ${isLowScore ? '#1a1a2e 0%, #16213e 100%' : '#00d2ff 0%, #3a7bd5 100%'});
+        border: 2px solid ${isLowScore ? '#0f3460' : 'transparent'};
+        border-radius: 16px;
         color: white;
         font-family: 'SF Mono', Consolas, monospace;
         text-align: center;
         z-index: 10000;
         overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        animation: successPulse 2s ease-in-out infinite alternate;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+        backdrop-filter: blur(20px);
+        animation: ${isLowScore ? 'none' : 'successPulse 2s ease-in-out infinite alternate'};
       `;
 
-            container.innerHTML = `
+            if (isLowScore) {
+                // Show full interface with export tabs for low scores
+                const header = this.createHeader();
+                const stats = this.createStatsDashboard();
+                const filterTabs = this.createFilterTabs();
+                const issuesContainer = document.createElement('div');
+                issuesContainer.id = 'a11y-issues-container';
+                issuesContainer.style.cssText = 'padding: 12px; max-height: 450px; overflow-y: auto;';
+                const controls = this.createControls();
+
+                container.appendChild(header);
+                container.appendChild(stats);
+                container.appendChild(filterTabs);
+                container.appendChild(issuesContainer);
+                container.appendChild(controls);
+
+                this.setupEventListeners(container);
+                
+                // Show special message for 0% score
+                if (wcagScore === 0) {
+                    issuesContainer.innerHTML = `
+                        <div style="padding: 40px 20px; text-align: center; color: #ff4757;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+                            <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">WCAG Compliance: 0%</div>
+                            <div style="font-size: 14px; color: #ccc; margin-bottom: 20px;">
+                                Обнаружены серьезные проблемы с доступностью.<br>
+                                Используйте вкладки выше для экспорта и анализа проблем.
+                            </div>
+                            <div style="background: rgba(255,71,87,0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,71,87,0.3); font-size: 12px;">
+                                💡 Рекомендуется начать с критических проблем<br>
+                                📊 Используйте вкладку "Экспорт" для получения детального отчета
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    this.renderIssues(issuesContainer, 'all');
+                }
+            } else {
+                // Show simple success message for high scores
+                container.innerHTML = `
         <div style="padding: 40px 30px;">
           <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
           <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Отличная доступность!</div>
           <div style="font-size: 14px; opacity: 0.9; margin-bottom: 20px;">
-            WCAG ${this.state.wcagLevel} Compliance: ${this.calculateWCAGScore()}%
+            WCAG ${this.state.wcagLevel} Compliance: ${wcagScore}%
           </div>
           <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 12px;">
             ✅ Контрастность текста<br>
@@ -3597,6 +3707,7 @@
           </button>
         </div>
       `;
+            }
 
             // Add success animation styles
             const style = document.createElement('style');
@@ -3608,18 +3719,26 @@
       `;
             document.head.appendChild(style);
 
-            container.querySelector('#close-success').addEventListener('click', () => {
-                container.style.opacity = '0';
-                container.style.transform = 'translate(-50%, -50%) scale(0.8)';
-                setTimeout(() => {
-                    if (container.parentNode) {
-                        container.parentNode.removeChild(container);
+            // Add event listener for close button
+            const closeButton = container.querySelector('#close-success') || container.querySelector('#close-a11y-analyzer');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => {
+                    if (isLowScore) {
+                        this.cleanup();
+                    } else {
+                        container.style.opacity = '0';
+                        container.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                        setTimeout(() => {
+                            if (container.parentNode) {
+                                container.parentNode.removeChild(container);
+                            }
+                            if (style && style.parentNode) {
+                                style.parentNode.removeChild(style);
+                            }
+                        }, 300);
                     }
-                    if (style.parentNode) {
-                        style.parentNode.removeChild(style);
-                    }
-                }, 300);
-            });
+                });
+            }
 
             document.body.appendChild(container);
         }
